@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bản Đồ Khoáng Sản Việt Nam (34 Tỉnh/TP)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+            <line x1="12" y1="22" x2="12" y2="15.5"></line>
+            <polyline points="22 8.5 12 15.5 2 8.5"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title" data-i18n="app_title">Bản Đồ Khoáng Sản Việt Nam</h1>
+          <p class="brand-subtitle" data-i18n="app_subtitle">34 Tỉnh / Thành phố sau sáp nhập 2025</p>
+        </div>
+      </div>
+
+      <div class="topbar-kpis" id="topbar-kpis">
+        <div class="kpi-pill">
+          <span class="kpi-value" id="kpi-provinces">34</span>
+          <span class="kpi-label" data-i18n="kpi_provinces">Tỉnh / TP</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="kpi-value" id="kpi-minerals">13</span>
+          <span class="kpi-label" data-i18n="kpi_minerals">Khoáng sản</span>
+        </div>
+        <div class="kpi-pill kpi-pill-accent">
+          <span class="kpi-value" id="kpi-matched">0</span>
+          <span class="kpi-label" data-i18n="kpi_matched">Tỉnh phù hợp</span>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btn-open-stats" class="btn btn-primary" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span data-i18n="btn_statistics">Thống kê</span>
+        </button>
+
+        <div class="lang-toggle" role="group" aria-label="Language switch">
+          <button type="button" class="lang-btn active" data-lang="vi">VI</button>
+          <button type="button" class="lang-btn" data-lang="en">EN</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Left Filter & Province Sidebar -->
+      <aside class="sidebar" id="filter-sidebar">
+        <div class="sidebar-section">
+          <div class="search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="search"
+              id="search-input"
+              autocomplete="off"
+              data-i18n-placeholder="search_placeholder"
+              placeholder="Tìm tỉnh, tỉnh cũ (VD: Đắk Nông), khoáng sản, mỏ..."
+            />
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label" data-i18n="filter_group">Nhóm khoáng sản</div>
+          <div class="group-pills" id="group-pills"></div>
+        </div>
+
+        <div class="sidebar-section filter-grid">
+          <div>
+            <label class="section-label" for="mineral-select" data-i18n="filter_mineral">Loại khoáng sản</label>
+            <select id="mineral-select" class="select-control"></select>
+          </div>
+          <div>
+            <label class="section-label" for="metric-select" data-i18n="filter_metric">Loại chỉ số</label>
+            <select id="metric-select" class="select-control"></select>
+          </div>
+        </div>
+
+        <div class="sidebar-toolbar">
+          <span class="section-label" data-i18n="province_list_title">Danh sách tỉnh / thành phố</span>
+          <button id="btn-reset-filters" class="btn-link" type="button" data-i18n="btn_reset_filters">Đặt lại bộ lọc</button>
+        </div>
+
+        <div class="province-list" id="province-list"></div>
+      </aside>
+
+      <!-- Interactive Map Canvas -->
+      <section class="map-stage">
+        <div id="map" class="leaflet-canvas"></div>
+
+        <div class="map-floating-controls">
+          <button id="btn-reset-view" class="map-ctrl-btn" type="button" data-i18n="btn_reset_view">Toàn cảnh VN</button>
+          <button id="btn-toggle-basemap" class="map-ctrl-btn" type="button" data-i18n="btn_basemap_tiles">Bản đồ nền</button>
+        </div>
+
+        <div class="map-legend" id="map-legend"></div>
+      </section>
+
+      <!-- Right Province Detail Drawer -->
+      <aside class="detail-drawer" id="detail-drawer" aria-hidden="true">
+        <div class="drawer-header">
+          <div class="drawer-title-wrap">
+            <span class="drawer-code" id="drawer-code"></span>
+            <h2 class="drawer-title" id="drawer-title"></h2>
+            <div class="drawer-badges" id="drawer-badges"></div>
+          </div>
+          <button id="btn-close-drawer" class="icon-btn" type="button" aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="drawer-meta" id="drawer-meta"></div>
+
+        <div class="drawer-body" id="drawer-body"></div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Statistics Modal -->
+  <div class="modal-backdrop" id="stats-modal" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="stats-modal-title" data-i18n="stats_title">Thống Kê Khoáng Sản Việt Nam</h2>
+          <p class="modal-subtitle" data-i18n="stats_subtitle">Tổng hợp theo bộ lọc hiện tại & dữ liệu quốc gia</p>
+        </div>
+        <button id="btn-close-stats" class="icon-btn" type="button" aria-label="Close statistics">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="stats-grid">
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h3 data-i18n="chart_province_ranking">Tỉnh/TP có nhiều khoáng sản trọng điểm nhất</h3>
+              <span class="chart-hint" data-i18n="chart_province_ranking_hint">Nhấp vào cột để xem tỉnh trên bản đồ</span>
+            </div>
+            <div class="chart-box">
+              <canvas id="chart-ranking"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h3 data-i18n="chart_group_breakdown">Phân bổ bản ghi theo nhóm khoáng sản</h3>
+            </div>
+            <div class="chart-box">
+              <canvas id="chart-groups"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h3 data-i18n="chart_national_reserves">Trữ lượng khoáng sản quốc gia (triệu tấn / tỉ m³)</h3>
+            </div>
+            <div class="chart-box">
+              <canvas id="chart-reserves"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h3 data-i18n="chart_national_production">Sản lượng khai thác cả nước (2010 vs 2021)</h3>
+            </div>
+            <div class="chart-box">
+              <canvas id="chart-production"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__INITIAL_I18N__ = {{ translations | tojson }};
+    window.__PROVINCE_EN_NAMES__ = {{ province_en_names | tojson }};
+  </script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="/static/js/i18n.js"></script>
+  <script src="/static/js/map.js"></script>
+  <script src="/static/js/charts.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
